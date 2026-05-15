@@ -37,10 +37,12 @@ function Register-SproutTask {
     Write-Host "Registered: $Name"
 }
 
-Register-SproutTask -Name "SproutClockIn"        -Hour $clockInTime.Hour  -Minute $clockInTime.Minute  -Argument "--action clock_in"
-Register-SproutTask -Name "SproutClockOut"       -Hour $clockOutTime.Hour -Minute $clockOutTime.Minute -Argument "--action clock_out"
-Register-SproutTask -Name "SproutDailyReport"    -Hour 20                 -Minute 0                   -Argument "--report"
-Register-SproutTask -Name "SproutMorningReport"  -Hour 8                  -Minute 0                   -Argument "--report-browser"
+Register-SproutTask -Name "SproutClockIn"       -Hour $clockInTime.Hour  -Minute $clockInTime.Minute  -Argument "--action clock_in"
+Register-SproutTask -Name "SproutClockOut"      -Hour $clockOutTime.Hour -Minute $clockOutTime.Minute -Argument "--action clock_out"
+Register-SproutTask -Name "SproutMorningReport" -Hour 8                  -Minute 0                   -Argument "--report-browser"
+
+# Remove the old 8pm terminal report task if it exists
+Unregister-ScheduledTask -TaskName "SproutDailyReport" -Confirm:$false -ErrorAction SilentlyContinue
 
 Write-Host ""
-Write-Host "All 4 tasks registered. Run 'python clocker.py --setup' next to save your credentials."
+Write-Host "All 3 tasks registered. Run 'python clocker.py --setup' next to save your credentials."
