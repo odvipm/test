@@ -25,6 +25,15 @@ _CLOCK_OUT_SELECTOR = (
     " > div > div.widget-title.widget-2.parent > div.dropdown.clock-in-out-dropdown.open"
     " > ul > li:nth-child(2) > a > span"
 )
+# Confirmation modals that appear after selecting clock in/out
+_CLOCK_IN_CONFIRM_SELECTOR = (
+    "body > div.modal.fade.clock-in-dialog.in > div > div"
+    " > div.modal-footer > button.btn.btn-primary.our-button"
+)
+_CLOCK_OUT_CONFIRM_SELECTOR = (
+    "body > div.modal.fade.clock-out-dialog.in > div > div"
+    " > div.modal-footer > button.btn.btn-primary.our-button"
+)
 
 
 def _is_session_valid(page: Page) -> bool:
@@ -64,6 +73,11 @@ def perform_clock_action(action: str, sprout_url: str, username: str, password: 
         selector = _CLOCK_IN_SELECTOR if action == "clock_in" else _CLOCK_OUT_SELECTOR
         page.wait_for_selector(selector, state="attached", timeout=10000)
         page.locator(selector).dispatch_event("click")
+
+        # Confirm the "Are you sure?" modal
+        confirm = _CLOCK_IN_CONFIRM_SELECTOR if action == "clock_in" else _CLOCK_OUT_CONFIRM_SELECTOR
+        page.wait_for_selector(confirm, timeout=10000)
+        page.locator(confirm).click()
 
         page.wait_for_timeout(2000)
         _save_session(context)
