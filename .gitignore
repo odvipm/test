@@ -1,0 +1,6 @@
+auth_state.json
+credentials.json
+logs/
+__pycache__/
+*.pyc
+.pytest_cache/

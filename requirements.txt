@@ -1,0 +1,6 @@
+playwright>=1.44
+keyring>=25.0
+plyer>=2.1
+pytz>=2024.1
+pytest>=8.0
+pytest-mock>=3.14

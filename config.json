@@ -1,0 +1,7 @@
+{
+  "sprout_url": "https://YOUR_COMPANY.sprout.ph",
+  "clock_in_time": "09:00",
+  "clock_out_time": "18:00",
+  "workdays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+  "timezone": "Asia/Manila"
+}
