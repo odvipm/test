@@ -47,3 +47,12 @@ def read_entries() -> list[dict]:
 
 def get_entries_for_date(target: "datetime.date") -> list[dict]:
     return [e for e in read_entries() if e["timestamp"].date() == target]
+
+
+def has_missed_report(date_str: str, action: str) -> bool:
+    """Return True if a MISSED REPORT for this date+action was already written."""
+    if not LOG_PATH.exists():
+        return False
+    needle = f"REPORT: {action} MISSED on {date_str}"
+    with open(LOG_PATH) as f:
+        return any(needle in line for line in f)

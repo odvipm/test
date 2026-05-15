@@ -47,7 +47,7 @@ def check_missed_runs() -> list[str]:
             e["timestamp"].date() == prev and e["action"] == action and e["status"] == "success"
             for e in entries
         )
-        if not has_entry:
+        if not has_entry and not logger.has_missed_report(str(prev), action):
             msg = f"{action} MISSED on {prev} (no record found — laptop was likely off or disconnected)"
             logger.write_report(msg)
             missed.append(msg)

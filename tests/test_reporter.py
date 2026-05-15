@@ -59,7 +59,10 @@ def test_generate_report_includes_today(tmp_path, mocker):
     })
     mocker.patch("reporter._today", return_value=date(2026, 5, 15))
 
-    logger.write_entry("clock_in", "success")
+    logger.LOG_PATH.parent.mkdir(exist_ok=True)
+    logger.LOG_PATH.write_text(
+        "[2026-05-15 09:00:00] ACTION: clock_in | STATUS: success\n"
+    )
 
     from reporter import generate_report
     report = generate_report()

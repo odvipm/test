@@ -34,6 +34,10 @@ _CLOCK_OUT_CONFIRM_SELECTOR = (
     "body > div.modal.fade.clock-out-dialog.in > div > div"
     " > div.modal-footer > button.btn.btn-primary.our-button"
 )
+# Success modals differ between clock-in and clock-out
+_CLOCK_IN_SUCCESS_TITLE = "Time Entry Confirmation"
+_CLOCK_OUT_SUCCESS_TITLE = "Clocking Status Update"
+_SUCCESS_MODAL_OK = "button:has-text('Ok')"
 
 
 def _is_session_valid(page: Page) -> bool:
@@ -68,6 +72,8 @@ def perform_clock_action(action: str, sprout_url: str, username: str, password: 
         # Wait for dashboard to attach to DOM, then dispatch JS click (bypasses all visibility checks)
         page.wait_for_selector(_TOGGLE_SELECTOR, state="attached", timeout=30000)
         page.locator(_TOGGLE_SELECTOR).dispatch_event("click")
+        # Give Bootstrap's dropdown animation time to complete before clicking the item
+        page.wait_for_timeout(800)
 
         # Wait for dropdown items to attach, then dispatch click
         selector = _CLOCK_IN_SELECTOR if action == "clock_in" else _CLOCK_OUT_SELECTOR
@@ -79,6 +85,13 @@ def perform_clock_action(action: str, sprout_url: str, username: str, password: 
         page.wait_for_selector(confirm, timeout=10000)
         page.locator(confirm).click()
 
-        page.wait_for_timeout(2000)
+        # Wait for the action-specific success modal and verify it confirms success
+        success_title = _CLOCK_IN_SUCCESS_TITLE if action == "clock_in" else _CLOCK_OUT_SUCCESS_TITLE
+        page.wait_for_selector(f"text={success_title}", timeout=15000)
+        modal_text = page.locator(f"text={success_title}").locator("..").inner_text()
+        if "success" not in modal_text.lower():
+            raise RuntimeError(f"Clock action returned unexpected result: {modal_text}")
+        page.locator(_SUCCESS_MODAL_OK).click()
+
         _save_session(context)
         browser.close()
