@@ -12,7 +12,7 @@ _SUBMIT_SELECTOR = "#kc-login"
 _TOGGLE_SELECTOR = (
     "#dashboard-container-fluid > div > div > div.col-md-8 > div > div:nth-child(6)"
     " > div > div.widget-title.widget-2.parent > div:nth-child(3)"
-    " > button.btn.dropdown-toggle.dsk-btn > span"
+    " > button.btn.dropdown-toggle.dsk-btn"
 )
 # These appear after the dropdown opens
 _CLOCK_IN_SELECTOR = (
