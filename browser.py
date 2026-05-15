@@ -4,16 +4,31 @@ from playwright.sync_api import sync_playwright, Page
 
 AUTH_STATE_PATH = Path(__file__).parent / "auth_state.json"
 
-# Selectors — update these with values discovered by inspecting the live Sprout app
-_EMAIL_SELECTOR = "input[name='email']"
-_PASSWORD_SELECTOR = "input[type='password']"
-_SUBMIT_SELECTOR = "button[type='submit']"
-_CLOCK_IN_SELECTOR = "button:has-text('Clock In')"
-_CLOCK_OUT_SELECTOR = "button:has-text('Clock Out')"
+_EMAIL_SELECTOR = "#username"
+_PASSWORD_SELECTOR = "#password"
+_SUBMIT_SELECTOR = "#kc-login"
+
+# First click opens the dropdown
+_TOGGLE_SELECTOR = (
+    "#dashboard-container-fluid > div > div > div.col-md-8 > div > div:nth-child(6)"
+    " > div > div.widget-title.widget-2.parent > div:nth-child(3)"
+    " > button.btn.dropdown-toggle.dsk-btn > span"
+)
+# These appear after the dropdown opens
+_CLOCK_IN_SELECTOR = (
+    "#dashboard-container-fluid > div > div > div.col-md-8 > div > div:nth-child(6)"
+    " > div > div.widget-title.widget-2.parent > div.dropdown.clock-in-out-dropdown.open"
+    " > ul > li:nth-child(1) > a > span"
+)
+_CLOCK_OUT_SELECTOR = (
+    "#dashboard-container-fluid > div > div > div.col-md-8 > div > div:nth-child(6)"
+    " > div > div.widget-title.widget-2.parent > div.dropdown.clock-in-out-dropdown.open"
+    " > ul > li:nth-child(2) > a > span"
+)
 
 
 def _is_session_valid(page: Page) -> bool:
-    return "login" not in page.url.lower()
+    return not page.locator(_SUBMIT_SELECTOR).is_visible()
 
 
 def _login(page: Page, sprout_url: str, username: str, password: str) -> None:
@@ -21,7 +36,7 @@ def _login(page: Page, sprout_url: str, username: str, password: str) -> None:
     page.fill(_EMAIL_SELECTOR, username)
     page.fill(_PASSWORD_SELECTOR, password)
     page.click(_SUBMIT_SELECTOR)
-    page.wait_for_load_state("networkidle", timeout=15000)
+    page.wait_for_load_state("networkidle", timeout=30000)
 
 
 def _save_session(context) -> None:
@@ -29,7 +44,6 @@ def _save_session(context) -> None:
 
 
 def perform_clock_action(action: str, sprout_url: str, username: str, password: str) -> None:
-    """Perform clock_in or clock_out via headless Playwright browser."""
     storage = str(AUTH_STATE_PATH) if AUTH_STATE_PATH.exists() else None
 
     with sync_playwright() as p:
@@ -42,8 +56,15 @@ def perform_clock_action(action: str, sprout_url: str, username: str, password: 
             _login(page, sprout_url, username, password)
             _save_session(context)
 
+        # Wait for dashboard to fully load, then open the clock dropdown
+        page.wait_for_selector(_TOGGLE_SELECTOR, timeout=30000)
+        page.click(_TOGGLE_SELECTOR)
+
+        # Wait for dropdown to open, then click Clock In or Clock Out
         selector = _CLOCK_IN_SELECTOR if action == "clock_in" else _CLOCK_OUT_SELECTOR
+        page.wait_for_selector(selector, timeout=10000)
         page.click(selector)
+
         page.wait_for_timeout(2000)
         _save_session(context)
         browser.close()
