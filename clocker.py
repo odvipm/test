@@ -1,5 +1,6 @@
 import argparse
 import getpass
+import os
 import time
 from datetime import datetime
 
@@ -10,7 +11,7 @@ from browser import perform_clock_action
 from config import load_config
 from logger import write_entry, write_report
 from notifier import notify
-from reporter import check_missed_runs, generate_report
+from reporter import check_missed_runs, generate_report, generate_report_html
 
 MAX_RETRIES = 3
 RETRY_WAIT = 30
@@ -66,6 +67,12 @@ def _run_report() -> None:
         notify("Sprout: Missed entries ⚠", "\n".join(missed[:3]))
 
 
+def _run_report_browser() -> None:
+    check_missed_runs()
+    html_path = generate_report_html()
+    os.startfile(str(html_path))
+
+
 def _run_setup() -> None:
     username = input("Sprout username (email): ")
     password = getpass.getpass("Sprout password: ")
@@ -77,7 +84,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Sprout Auto Clocker")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--action", choices=["clock_in", "clock_out"], help="Perform clock action")
-    group.add_argument("--report", action="store_true", help="Show 7-day summary")
+    group.add_argument("--report", action="store_true", help="Show 7-day summary in terminal")
+    group.add_argument("--report-browser", action="store_true", help="Open 7-day summary in browser")
     group.add_argument("--setup", action="store_true", help="Save Sprout credentials")
     args = parser.parse_args()
 
@@ -85,6 +93,8 @@ def main() -> None:
         _run_action(args.action)
     elif args.report:
         _run_report()
+    elif args.report_browser:
+        _run_report_browser()
     elif args.setup:
         _run_setup()
 

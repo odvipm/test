@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Optional
 
 import pytz
 
 import logger
 from config import load_config
+
+REPORT_HTML_PATH = Path(__file__).parent / "report.html"
 
 
 def _today(tz: pytz.BaseTzInfo) -> "datetime.date":
@@ -77,3 +80,64 @@ def generate_report() -> str:
         lines.append(f"  {day.strftime('%a %b')} {day.day}  {ci_str}  {co_str}")
 
     return "\n".join(lines)
+
+
+def generate_report_html() -> Path:
+    config = load_config()
+    tz = pytz.timezone(config["timezone"])
+    today = _today(tz)
+    start = today - timedelta(days=6)
+    days = _workdays_in_range(start, today, config["workdays"])
+    entries = logger.read_entries()
+    generated = datetime.now(tz).strftime("%A, %B %d %Y %I:%M %p")
+
+    rows = []
+    for day in days:
+        ci = next(
+            (e for e in entries if e["timestamp"].date() == day and e["action"] == "clock_in" and e["status"] == "success"),
+            None,
+        )
+        co = next(
+            (e for e in entries if e["timestamp"].date() == day and e["action"] == "clock_out" and e["status"] == "success"),
+            None,
+        )
+        ci_str = f'<span class="ok">✓ {ci["timestamp"].strftime("%H:%M")}</span>' if ci else '<span class="missed">✗ MISSED</span>'
+        if day == today:
+            co_str = f'<span class="ok">✓ {co["timestamp"].strftime("%H:%M")}</span>' if co else '<span class="pending">— pending</span>'
+        else:
+            co_str = f'<span class="ok">✓ {co["timestamp"].strftime("%H:%M")}</span>' if co else '<span class="missed">✗ MISSED</span>'
+        rows.append(f"<tr><td>{day.strftime('%a, %b %d')}</td><td>{ci_str}</td><td>{co_str}</td></tr>")
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sprout Attendance</title>
+<style>
+  body {{ font-family: Segoe UI, Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 40px; }}
+  .card {{ background: white; max-width: 520px; margin: auto; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,.1); padding: 32px; }}
+  h2 {{ margin: 0 0 4px; font-size: 20px; color: #1a1a2e; }}
+  .sub {{ color: #888; font-size: 13px; margin-bottom: 24px; }}
+  table {{ width: 100%; border-collapse: collapse; }}
+  th {{ text-align: left; color: #888; font-size: 12px; text-transform: uppercase; padding: 8px 10px; border-bottom: 2px solid #eee; }}
+  td {{ padding: 12px 10px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }}
+  tr:last-child td {{ border-bottom: none; }}
+  .ok {{ color: #22a06b; font-weight: 600; }}
+  .missed {{ color: #e5484d; font-weight: 600; }}
+  .pending {{ color: #aaa; }}
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>Sprout Attendance</h2>
+  <div class="sub">Generated {generated}</div>
+  <table>
+    <tr><th>Day</th><th>Clock In</th><th>Clock Out</th></tr>
+    {"".join(rows)}
+  </table>
+</div>
+</body>
+</html>"""
+
+    REPORT_HTML_PATH.write_text(html, encoding="utf-8")
+    return REPORT_HTML_PATH
