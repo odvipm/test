@@ -56,14 +56,14 @@ def perform_clock_action(action: str, sprout_url: str, username: str, password: 
             _login(page, sprout_url, username, password)
             _save_session(context)
 
-        # Wait for dashboard to fully load, then open the clock dropdown
-        page.wait_for_selector(_TOGGLE_SELECTOR, timeout=30000)
-        page.click(_TOGGLE_SELECTOR)
+        # Wait for dashboard to attach to DOM, then force-click (button may be CSS-hidden during load)
+        page.wait_for_selector(_TOGGLE_SELECTOR, state="attached", timeout=30000)
+        page.locator(_TOGGLE_SELECTOR).click(force=True)
 
         # Wait for dropdown to open, then click Clock In or Clock Out
         selector = _CLOCK_IN_SELECTOR if action == "clock_in" else _CLOCK_OUT_SELECTOR
-        page.wait_for_selector(selector, timeout=10000)
-        page.click(selector)
+        page.wait_for_selector(selector, state="attached", timeout=10000)
+        page.locator(selector).click(force=True)
 
         page.wait_for_timeout(2000)
         _save_session(context)
