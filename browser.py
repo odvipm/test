@@ -38,6 +38,7 @@ _CLOCK_OUT_CONFIRM_SELECTOR = (
 _CLOCK_IN_SUCCESS_TITLE = "Time Entry Confirmation"
 _CLOCK_OUT_SUCCESS_TITLE = "Clocking Status Update"
 _SUCCESS_MODAL_OK = "button:has-text('Ok')"
+_SUCCESS_MODAL_SELECTOR = "div.modal.in:has-text('{title}')"
 
 
 def _is_session_valid(page: Page) -> bool:
@@ -87,11 +88,13 @@ def perform_clock_action(action: str, sprout_url: str, username: str, password: 
 
         # Wait for the action-specific success modal and verify it confirms success
         success_title = _CLOCK_IN_SUCCESS_TITLE if action == "clock_in" else _CLOCK_OUT_SUCCESS_TITLE
-        page.wait_for_selector(f"text={success_title}", timeout=15000)
-        modal_text = page.locator(f"text={success_title}").locator("..").inner_text()
+        success_modal_selector = _SUCCESS_MODAL_SELECTOR.format(title=success_title)
+        page.wait_for_selector(success_modal_selector, timeout=15000)
+        success_modal = page.locator(success_modal_selector)
+        modal_text = success_modal.inner_text()
         if "success" not in modal_text.lower():
             raise RuntimeError(f"Clock action returned unexpected result: {modal_text}")
-        page.locator(_SUCCESS_MODAL_OK).click()
+        success_modal.locator(_SUCCESS_MODAL_OK).click()
 
         _save_session(context)
         browser.close()
